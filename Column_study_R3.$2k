@@ -1,4 +1,4 @@
-File F:\Moment for solid\Compare-Seismic-Analysis-Methods-Git\Column_study_R3.$2k was saved on 8/19/14 at 14:45:05
+File F:\Moment for solid\Compare-Seismic-Analysis-Methods-Git\Column_study_R3.$2k was saved on 8/19/14 at 15:47:39
  
 TABLE:  "ACTIVE DEGREES OF FREEDOM"
    UX=Yes   UY=Yes   UZ=Yes   RX=Yes   RY=Yes   RZ=Yes
@@ -36213,9 +36213,9 @@ TABLE:  "CASE - MODAL 2 - LOAD ASSIGNMENTS - EIGEN"
    Case=MODAL   LoadType=Acceleration   LoadName="Accel UZ"   TargetPar=99   StatCorrect=Yes
  
 TABLE:  "CASE - MODAL HISTORY 1 - GENERAL"
-   Case=TH_H1   HistoryType=Transient   OutSteps=10831   StepSize=0.005   ConstDamp=0.05
+   Case=TH_H1   HistoryType=Transient   OutSteps=7997   StepSize=0.005   ConstDamp=0.05
    Case=TH_H2   HistoryType=Transient   OutSteps=7997   StepSize=0.005   ConstDamp=0.05
-   Case=TH_V   HistoryType=Transient   OutSteps=10831   StepSize=0.005   ConstDamp=0.05
+   Case=TH_V   HistoryType=Transient   OutSteps=7997   StepSize=0.005   ConstDamp=0.05
  
 TABLE:  "CASE - MODAL HISTORY 2 - LOAD ASSIGNMENTS"
    Case=TH_H1   LoadType=Accel   LoadName="Accel U1"   Function=H1   TransAccSF=32.2   TimeFactor=1   ArrivalTime=0   CoordSys=GLOBAL   Angle=0
@@ -48648,9 +48648,9 @@ TABLE:  "FUNCTION - STEADY STATE - USER"
    Name=UNIFSS   Frequency=1   Value=1
  
 TABLE:  "FUNCTION - TIME HISTORY - FROM FILE"
-   Name=H1   HeaderLines=1   PrefixChars=0   PtsPerLine=8   DataType="Equal Interval"   FormatType=Fixed   FixedLength=9   Interval=0.005   FileName="d:\column study paper\th_vy_h1.txt"
+   Name=H1   HeaderLines=1   PrefixChars=0   PtsPerLine=8   DataType="Equal Interval"   FormatType=Fixed   FixedLength=9   Interval=0.005   FileName="f:\moment for solid\compare-seismic-analysis-methods-git\th_vy_h1.txt"
    Name=H2   HeaderLines=1   PrefixChars=0   PtsPerLine=8   DataType="Equal Interval"   FormatType=Fixed   FixedLength=9   Interval=0.005   FileName="d:\column study paper\th_vy_h2.txt"
-   Name=V   HeaderLines=1   PrefixChars=0   PtsPerLine=8   DataType="Equal Interval"   FormatType=Fixed   FixedLength=9   Interval=0.005   FileName="d:\column study paper\th_vy_v.txt"
+   Name=V   HeaderLines=1   PrefixChars=0   PtsPerLine=8   DataType="Equal Interval"   FormatType=Fixed   FixedLength=9   Interval=0.005   FileName="f:\moment for solid\compare-seismic-analysis-methods-git\th_vy_v.txt"
  
 TABLE:  "GRID LINES"
    CoordSys=GLOBAL   AxisDir=X   XRYZCoord=0   LineType=Primary   LineColor=Gray8Dark   Visible=Yes   BubbleLoc=End   AllVisible=Yes   BubbleSize=8

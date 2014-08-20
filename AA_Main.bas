@@ -216,8 +216,8 @@ For BeamGroup_i = 1 To NumBmGroups
         For ii = 0 To UBound(Elm)
             Key = Obj(ii) & "_" & ElmSta(ii) & "_" & EQAnalysis & "_" & StepNum(ii) & "_"
             'Retrieve beam forces from Static Force Dictionary
-            tempDL = StaticForces.Item(Obj(ii) & "_" & ElmSta(ii) & "_Dead")
-            tempLL = StaticForces.Item(Obj(ii) & "_" & ElmSta(ii) & "_Live")
+            tempDL = StaticForces.Item(Obj(ii) & "_" & ElmSta(ii) & "_DEAD")
+            tempLL = StaticForces.Item(Obj(ii) & "_" & ElmSta(ii) & "_LIVE")
             PDL = -tempDL(0)
             PLL = -tempLL(0)
             M2DL = tempDL(1)
@@ -300,6 +300,7 @@ For BeamGroup_i = 1 To NumBmGroups
             ReDim numFactLoads(1 To numSRSSCTIFiles)
             For j = 1 To numSRSSCTIFiles
                 SRSSfilenameCTI(j) = EQAnalysis & BmGrpNm & "-SRSS-" & j & "PCAInputFile.cti"
+                
                 '[Add CTI Files to PCA Batch File]
                 Open ActiveWorkbook.Path & "\pcaBatchFile.bat" For Append As #Fnum3
                     Print #Fnum3, "cd " & ActiveWorkbook.Path
@@ -423,6 +424,7 @@ For BeamGroup_i = 1 To NumBmGroups
                 StartIndex = (j - 1) * 4500
                 EndIndex = ((j - 1) * 4500) + (numFactLoads(j) - 1)
                 
+                'Add general information from module "PCA"
                 For q = 1 To 43
                     Print #Fnum2, strArray(q)
                 Next q
@@ -431,6 +433,7 @@ For BeamGroup_i = 1 To NumBmGroups
                     Print #Fnum2, EQForcesHund.Items(q)(0) & "," & EQForcesHund.Items(q)(1) & "," & EQForcesHund.Items(q)(2)
                 Next q
                 
+                'Add the remainder of the general information from module "PCA"
                 For q = 44 To 86
                     Print #Fnum2, strArray(q)
                 Next q
