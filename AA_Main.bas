@@ -11,7 +11,8 @@ Sub Main()
 
 Dim NumBmGroups As Single                   'This is the number of beams in the SAP model
 Dim BmGrpNm As String                       'This is the name of the current beam group being post processed
-Dim NumFrames As Double                         'This is the number of frames in the surrent frame group
+Dim NumFrames As Double                     'This is the number of frames in the current frame group
+Dim NumTS As Double                         'This is the number of time steps in the input time histories
 Dim NumStaticLC As Single                   'This is the number of different static load cases in the SAP model
 Dim StaticLC() As String                    'This stores the names of the static load cases in the SAP model
 Dim DEADForces() As Double                  'This stores the forces from the static DEAD load cases
@@ -219,15 +220,7 @@ For BeamGroup_i = 1 To NumBmGroups
 
         'set output time step option (Envelopes, each step, or last step)
         Ret = SapModel.Results.Setup.SetOptionModalHist(2) '2 is for each step
-        
-        'Find the number of timesteps in input time history functions
-        Dim NumberItems As Long
-        Dim MyTime() As Double
-        Dim Value() As Double
-        Dim NumTS As Long
-        Ret = SapModel.Func.GetValues(EQLC(0), NumberItems, MyTime, Value)
-        NumTS = NumberItems
-        
+            
         'Set case and combo output selections
         Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
         Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(0))
@@ -239,6 +232,7 @@ For BeamGroup_i = 1 To NumBmGroups
         Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(2))
         Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ3, V2_EQ3, V3_EQ3, T_EQ3, M2_EQ3, M3_EQ3)
         NumFrames = (UBound(DEADForces) + 1) / 3 ' Find the number of frames in the group
+        NumTS = UBound(Obj) / NumFrames / 3 'Find the number of time steps
         SRSScounter = 0
         Hundcounter = 0
         ASUMcounter = 0

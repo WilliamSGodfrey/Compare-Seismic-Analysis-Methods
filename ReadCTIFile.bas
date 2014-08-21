@@ -29,6 +29,12 @@ Dim MaxTBBars As String
 Dim MaxSideBars As String
 Dim Fnum1 As Long
 
+Dim MinIC As Double
+Dim IC As Double
+Dim LC As String
+Dim file As String
+
+
 Set bararea = New Dictionary
 
 bararea.Add 3, 0.11
@@ -58,6 +64,7 @@ For j = 1 To 3
     MaxSideBars = ""
     MaxTBSteel = 0
     MaxSideSteel = 0
+    MinIC = 9999999
 
     For i = 0 To NumFiles - 1
         ctiPath = Split(Worksheets("Main").Cells(2 + i, j).Value, ".cti")(0) & ".out"
@@ -105,7 +112,17 @@ For j = 1 To 3
                     MaxSideSteel = AreaSideSteel
                     MaxSideBars = numSideBars & " #" & sizeSideBars
                 End If
-                Exit Do
+                'Exit Do
+            End If
+            
+            'Read in IC information
+            If Len(lineStr) = 86 Then
+                IC = CDbl(Mid(lineStr, 70, 9))
+                If IC < MinIC Then
+                    MinIC = IC
+                    LC = Mid(lineStr, 1, 9)
+                    file = ctiPath
+                End If
             End If
         Loop
         Close #Fnum1
@@ -114,6 +131,7 @@ For j = 1 To 3
     
     Worksheets("Main").Cells(i + 3, j).Value = MaxTBBars & ", " & MaxTBSteel & " in^2, T&B"
     Worksheets("Main").Cells(i + 4, j).Value = MaxSideBars & ", " & MaxSideSteel & " in^2, each side"
+    Worksheets("Main").Cells(i + 5, j).Value = MinIC & ", " & LC & ", " & file
 
 
 Next j 'next combination type
