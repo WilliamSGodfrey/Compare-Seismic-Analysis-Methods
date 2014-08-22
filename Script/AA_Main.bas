@@ -87,6 +87,16 @@ Dim M2DL As Double
 Dim M2LL As Double
 Dim M3DL As Double
 Dim M3LL As Double
+
+Dim P100 As Double
+Dim P40_1 As Double
+Dim P40_2 As Double
+Dim M2_100 As Double
+Dim M2_40_1 As Double
+Dim M2_40_2 As Double
+Dim M3_40_1 As Double
+Dim M3_40_2 As Double
+
 Dim tempDL()
 Dim tempLL()
 
@@ -138,12 +148,12 @@ BB_OpenSAP.Open_SAP_Model (ModelPath)
 ReDim PosNeg(1 To 2)
 PosNeg(1) = 1
 PosNeg(2) = -1
-ReDim HunForFor(1 To 5)
-HunForFor(1) = 1
-HunForFor(2) = 0.4
-HunForFor(3) = 0.4
-HunForFor(4) = 1
-HunForFor(5) = 0.4
+'ReDim HunForFor(1 To 5)
+'HunForFor(1) = 1
+'HunForFor(2) = 0.4
+'HunForFor(3) = 0.4
+'HunForFor(4) = 1
+'HunForFor(5) = 0.4
 
 
 'Count some stuff
@@ -232,7 +242,11 @@ For BeamGroup_i = 1 To NumBmGroups
         Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(2))
         Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ3, V2_EQ3, V3_EQ3, T_EQ3, M2_EQ3, M3_EQ3)
         NumFrames = (UBound(DEADForces) + 1) / 3 ' Find the number of frames in the group
-        NumTS = UBound(Obj) / NumFrames / 3 'Find the number of time steps
+        If EQAnalysis = "TH" Then
+            NumTS = UBound(Obj) / NumFrames / 3 'Find the number of time steps
+        Else
+            NumTS = 0
+        End If
         SRSScounter = 0
         Hundcounter = 0
         ASUMcounter = 0
@@ -242,7 +256,7 @@ For BeamGroup_i = 1 To NumBmGroups
             ReDim EQForcesSRSS(0 To NumberResults * 8 - 1, 0 To 2)
         End If
         If CombineEQList.Exists("100-40-40") Then
-            ReDim EQForcesHund(0 To NumberResults * 24 - 1, 0 To 2)
+            ReDim EQForcesHund(0 To NumberResults * 8 - 1, 0 To 2)
         End If
         If CombineEQList.Exists("ASUM") Then
             ReDim EQForcesASUM(0 To NumberResults - 1, 0 To 2)
@@ -278,20 +292,36 @@ For BeamGroup_i = 1 To NumBmGroups
                             Next k
                         Next jj
                     End If
-                    If CombineEQList.Exists("100-40-40") Then
+                    If CombineEQList.Exists("100-40-40") Then 'see SRP 1.92, 2.1
+                        'Find P_EQ with largest magnitude
+                        TempArray = Array(Abs(P_EQ1(EQIndex)), Abs(P_EQ2(EQIndex)), Abs(P_EQ3(EQIndex)))
+                        P100 = Application.WorksheetFunction.Large(TempArray, 1)
+                        P40_1 = Application.WorksheetFunction.Large(TempArray, 2)
+                        P40_2 = Application.WorksheetFunction.Large(TempArray, 3)
+                                                               
+                        'Find M2_EQ with largest magnitude
+                        TempArray = Array(Abs(M2_EQ1(EQIndex)), Abs(M2_EQ2(EQIndex)), Abs(M2_EQ3(EQIndex)))
+                        M2_100 = Application.WorksheetFunction.Large(TempArray, 1)
+                        M2_40_1 = Application.WorksheetFunction.Large(TempArray, 2)
+                        M2_40_2 = Application.WorksheetFunction.Large(TempArray, 3)
+                        
+                        'Find M3_EQ with largest magnitude
+                        TempArray = Array(Abs(M3_EQ1(EQIndex)), Abs(M3_EQ2(EQIndex)), Abs(M3_EQ3(EQIndex)))
+                        M3_100 = Application.WorksheetFunction.Large(TempArray, 1)
+                        M3_40_1 = Application.WorksheetFunction.Large(TempArray, 2)
+                        M3_40_2 = Application.WorksheetFunction.Large(TempArray, 3)
                         For jj = 1 To 2
                             For k = 1 To 2
                                 For kk = 1 To 2
-                                    For j = 1 To 3
-                                        'Combine static beam forces with permuted seismic beam forces, use ACI349 9.2.1 LC4 only
-                                        P_EQcom = (PosNeg(jj) * HunForFor(j) * -P_EQ1(EQIndex) + PosNeg(k) * HunForFor(j + 1) * -P_EQ2(EQIndex) + PosNeg(kk) * HunForFor(j + 2) * -P_EQ3(EQIndex)) + PDL + PLL
-                                        M2_EQcom = (PosNeg(jj) * HunForFor(j) * M2_EQ1(EQIndex) + PosNeg(k) * HunForFor(j + 1) * M2_EQ2(EQIndex) + PosNeg(kk) * HunForFor(j + 2) * M2_EQ3(EQIndex)) + M2DL + M2LL
-                                        M3_EQcom = (PosNeg(jj) * HunForFor(j) * M3_EQ1(EQIndex) + PosNeg(k) * HunForFor(j + 1) * M3_EQ2(EQIndex) + PosNeg(kk) * HunForFor(j + 2) * M3_EQ3(EQIndex)) + M3DL + M3LL
-                                        EQForcesHund(Hundcounter, 0) = P_EQcom
-                                        EQForcesHund(Hundcounter, 1) = M2_EQcom
-                                        EQForcesHund(Hundcounter, 2) = M3_EQcom
-                                        Hundcounter = Hundcounter + 1
-                                        Next j
+                                    'Combine static beam forces with seismic beam forces, use ACI349 9.2.1 LC4 only
+                                    P_EQcom = PosNeg(jj) * (P100 + P40_1 + P40_2) + PDL + PLL
+                                    M2_EQcom = PosNeg(k) * (M2_100 + M2_40_1 + M2_40_2) + PDL + PLL
+                                    M3_EQcom = PosNeg(kk) * (M3_100 + M3_40_1 + M3_40_2) + PDL + PLL
+                                    
+                                    EQForcesHund(Hundcounter, 0) = P_EQcom
+                                    EQForcesHund(Hundcounter, 1) = M2_EQcom
+                                    EQForcesHund(Hundcounter, 2) = M3_EQcom
+                                    Hundcounter = Hundcounter + 1
                                 Next kk
                             Next k
                         Next jj
