@@ -314,9 +314,9 @@ For BeamGroup_i = 1 To NumBmGroups
                             For k = 1 To 2
                                 For kk = 1 To 2
                                     'Combine static beam forces with seismic beam forces, use ACI349 9.2.1 LC4 only
-                                    P_EQcom = PosNeg(jj) * (P100 + P40_1 + P40_2) + PDL + PLL
-                                    M2_EQcom = PosNeg(k) * (M2_100 + M2_40_1 + M2_40_2) + PDL + PLL
-                                    M3_EQcom = PosNeg(kk) * (M3_100 + M3_40_1 + M3_40_2) + PDL + PLL
+                                    P_EQcom = PosNeg(jj) * (P100 + 0.4 * P40_1 + 0.4 * P40_2) + PDL + PLL
+                                    M2_EQcom = PosNeg(k) * (M2_100 + 0.4 * M2_40_1 + 0.4 * M2_40_2) + PDL + PLL
+                                    M3_EQcom = PosNeg(kk) * (M3_100 + 0.4 * M3_40_1 + 0.4 * M3_40_2) + PDL + PLL
                                     
                                     EQForcesHund(Hundcounter, 0) = P_EQcom
                                     EQForcesHund(Hundcounter, 1) = M2_EQcom
