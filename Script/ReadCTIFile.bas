@@ -132,13 +132,13 @@ For j = 1 To 3
     Worksheets("Main").Cells(i + 3, j).Value = MaxTBBars & ", " & MaxTBSteel & " in^2, T&B"
     Worksheets("Main").Cells(i + 4, j).Value = MaxSideBars & ", " & MaxSideSteel & " in^2, each side"
     Worksheets("Main").Cells(i + 5, j).Value = MinIC & ", " & LC & ", " & file
+
+    'Also print result in columns E, F, & G for convenience
+    Worksheets("Main").Cells(1, j + 4).Value = Worksheets("Main").Cells(1, j).Value
+    Worksheets("Main").Cells(3, j + 4).Value = MaxTBBars & ", " & MaxTBSteel & " in^2, T&B"
+    Worksheets("Main").Cells(4, j + 4).Value = MaxSideBars & ", " & MaxSideSteel & " in^2, each side"
+    Worksheets("Main").Cells(5, j + 4).Value = MinIC & ", " & LC & ", " & file
     
-    MaxTBBars = ""
-    MaxTBSteel = 0
-    MaxSideBars = ""
-    MaxSideSteel = 0
-    LC = ""
-    file = ""
 
 
 Next j 'next combination type
