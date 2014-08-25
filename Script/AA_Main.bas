@@ -94,6 +94,7 @@ Dim P40_2 As Double
 Dim M2_100 As Double
 Dim M2_40_1 As Double
 Dim M2_40_2 As Double
+Dim M3_100 As Double
 Dim M3_40_1 As Double
 Dim M3_40_2 As Double
 
@@ -328,9 +329,9 @@ For BeamGroup_i = 1 To NumBmGroups
                     End If
                     If CombineEQList.Exists("ASUM") Then
                         'Combine static beam forces with permuted seismic beam forces, use ACI349 9.2.1 LC4 only
-                        P_EQcom = (-P_EQ1(ii) + -P_EQ2(ii) + -P_EQ3(ii)) + PDL + PLL
-                        M2_EQcom = (M2_EQ1(ii) + M2_EQ2(ii) + M2_EQ3(ii)) + M2DL + M2LL
-                        M3_EQcom = (M3_EQ1(ii) + M3_EQ2(ii) + M3_EQ3(ii)) + M3DL + M3LL
+                        P_EQcom = (-P_EQ1(EQIndex) + -P_EQ2(EQIndex) + -P_EQ3(EQIndex)) + PDL + PLL
+                        M2_EQcom = (M2_EQ1(EQIndex) + M2_EQ2(EQIndex) + M2_EQ3(EQIndex)) + M2DL + M2LL
+                        M3_EQcom = (M3_EQ1(EQIndex) + M3_EQ2(EQIndex) + M3_EQ3(EQIndex)) + M3DL + M3LL
                         TempArray = Array(P_EQcom, M2_EQcom, M3_EQcom)
                         EQForcesASUM(ASUMcounter, 0) = P_EQcom
                         EQForcesASUM(ASUMcounter, 1) = M2_EQcom
