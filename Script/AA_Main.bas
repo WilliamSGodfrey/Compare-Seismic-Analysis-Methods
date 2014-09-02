@@ -169,7 +169,7 @@ For j = 0 To NumStaticLC - 1
 Next j
 
 CTICount = 0
-Worksheets("Main").Range("A2:C65536").Clear
+Worksheets("Main").Range("A2:G65536").Clear
 
 
 For BeamGroup_i = 1 To NumBmGroups
