@@ -278,7 +278,7 @@ For BeamGroup_i = 1 To NumBmGroups
             Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ3, V2_EQ3, V3_EQ3, T_EQ3, M2_EQ3, M3_EQ3)
             
             If EQAnalysis = "TH" Then
-                NumTS = UBound(Obj) / NumFrames / 3 'Find the number of time steps
+                NumTS = (UBound(Obj) + 1) / NumFrames / 3 'Find the number of time steps
             Else
                 NumTS = 0
             End If
@@ -298,7 +298,7 @@ For BeamGroup_i = 1 To NumBmGroups
             End If
             
             For ii = 0 To NumFrames - 1 'Loop on the number of elements
-                For r = 0 To NumTS ' Loop on the number of time steps
+                For r = 0 To NumTS - 1 ' Loop on the number of time steps
                     For qq = 0 To 2 'Loop on the number of output stations
     
                         'Retrieve beam forces from Static Force Arrays
@@ -309,7 +309,12 @@ For BeamGroup_i = 1 To NumBmGroups
                         M3DL = DEADForces(3 * ii + qq, 2)
                         M3LL = LIVEForces(3 * ii + qq, 2)
     
-                        EQIndex = (ii * (NumTS * 3) + r * 3 + qq) 'array index where forces for current frame, TS, and station are located
+                        If EQAnalysis = "TH" Then
+                            EQIndex = (ii * (NumTS * 3) + r * 3 + qq) 'array index where forces for current frame, TS, and station are located
+                        Else
+                            EQIndex = (3 * ii + qq) 'array index where forces for current frame and station are located
+                        End If
+                        
                         
                         If CombineEQList.Exists("SRSS") Then
                             For jj = 1 To 2
