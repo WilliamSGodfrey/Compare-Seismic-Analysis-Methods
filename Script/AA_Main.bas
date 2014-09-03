@@ -20,6 +20,7 @@ Dim LIVEForces() As Double                  'This stores the forces from the sta
 Dim EQForcesSRSS() As Double                'This stores the forces from the EQ load cases combines by SRSS
 Dim EQForcesHund() As Double                'This stores the forces from the EQ load cases combines by 100-40-40
 Dim EQForcesASUM() As Double                'This stores the forces from the EQ load cases combines by ASUM
+Dim EQForcesSAPCombo() As Double              'This stores the forces from the EQ load COMBOS defined in SAP2000
 Dim ModelPath As String                     'This is the path to the SAP model
 Dim NumEQTypes As Single                    'This is the number of different seismic load types (e.g. Time history, equivalent static, response spectra, etc.)
 Dim NumEQComboType As Single                'This is the number of seismic effect combination methods
@@ -106,6 +107,7 @@ Dim TempArray As Variant
 Dim numSRSSCTIFiles As Long
 Dim numHundCTIFiles As Long
 Dim numASUMCTIFiles As Long
+Dim numSAPComboCTIFiles As Long
 
 Dim Fnum2 As Long
 Dim Fnum3 As Long
@@ -130,10 +132,12 @@ Dim EQIndex As Double                       'Counter
 Dim SRSScounter As Double                   'Counter
 Dim Hundcounter As Double                   'Counter
 Dim ASUMcounter As Double                   'Counter
+Dim EScounter As Double                     'Counter
 
 Dim BmWidth As Long
 Dim BmHeight As Long
 
+Set CombineEQList = New Dictionary
 
 '[Initialize batch file]
 Fnum3 = FreeFile()
@@ -198,6 +202,8 @@ For BeamGroup_i = 1 To NumBmGroups
         DEADForces(j, 2) = M3(j)
     Next j
 
+    NumFrames = (UBound(DEADForces) + 1) / 3 ' Find the number of frames in the group
+
     'Set case and combo output selections for LIVE Load
     Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
     Ret = SapModel.Results.Setup.SetCaseSelectedForOutput("LIVE")
@@ -214,145 +220,205 @@ For BeamGroup_i = 1 To NumBmGroups
     
     For i = 1 To NumEQTypes
         EQAnalysis = Worksheets("Input").Cells(1 + i, 9).Value
-        'Store EQ load case names and pull forces from SAP
-        tempEQLC = Worksheets("Input").Cells(1 + i, 10).Value
-        ReDim EQLC(0 To 2)
-        For j = 0 To 2
-            EQLC(j) = Split(tempEQLC, ", ")(j)
-        Next j
-
-        'Store seismic effect combination methods
-        Set CombineEQList = New Dictionary
-        tempCombos = Worksheets("Input").Cells(1 + i, 11).Value
-        NumEQComboType = UBound(Split(tempCombos))
-        For j = 0 To NumEQComboType
-            CombineEQList.Add Split(tempCombos, ", ")(j), ""
-        Next j
-
-        'set output time step option (Envelopes, each step, or last step)
-        Ret = SapModel.Results.Setup.SetOptionModalHist(2) '2 is for each step
+        
+        'Check if load combos have been specified in SAP, if so, just pull forces, do no combining
+        If EQAnalysis = "SAP_COMBOS" Then
+        
+            tempCombos = Worksheets("Input").Cells(1 + i, 10).Value
+            NumEQComboType = UBound(Split(tempCombos))
+            ReDim SAPCombos(0 To NumEQComboType)
             
-        'Set case and combo output selections
-        Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
-        Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(0))
-        Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ1, V2_EQ1, V3_EQ1, T_EQ1, M2_EQ1, M3_EQ1)
-        Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
-        Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(1))
-        Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ2, V2_EQ2, V3_EQ2, T_EQ2, M2_EQ2, M3_EQ2)
-        Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
-        Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(2))
-        Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ3, V2_EQ3, V3_EQ3, T_EQ3, M2_EQ3, M3_EQ3)
-        NumFrames = (UBound(DEADForces) + 1) / 3 ' Find the number of frames in the group
-        If EQAnalysis = "TH" Then
-            NumTS = UBound(Obj) / NumFrames / 3 'Find the number of time steps
-        Else
-            NumTS = 0
-        End If
-        SRSScounter = 0
-        Hundcounter = 0
-        ASUMcounter = 0
-        
-        'Initialize arrays that store combined forces if applicable to current analysis type
-        If CombineEQList.Exists("SRSS") Then
-            ReDim EQForcesSRSS(0 To NumberResults * 8 - 1, 0 To 2)
-        End If
-        If CombineEQList.Exists("100-40-40") Then
-            ReDim EQForcesHund(0 To NumberResults * 8 - 1, 0 To 2)
-        End If
-        If CombineEQList.Exists("ASUM") Then
-            ReDim EQForcesASUM(0 To NumberResults - 1, 0 To 2)
-        End If
-        
-        For ii = 0 To NumFrames - 1 'Loop on the number of elements
-            For r = 0 To NumTS ' Loop on the number of time steps
-                For qq = 0 To 2 'Loop on the number of output stations
+            'Clear SAP output cases
+            Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
+            For j = 0 To NumEQComboType
+                SAPCombos(j) = Split(tempCombos, ", ")(j)
+                'Set combo to be output from SAP
+                Ret = SapModel.Results.Setup.SetComboSelectedForOutput(SAPCombos(j))
+            Next j
+            'Pull forces for all combos from SAP
+            Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P, V2, V3, T, M2, M3)
+            
+            ReDim EQForcesSAPCombo(0 To NumberResults - 1, 0 To 2)
+            
+            EScounter = 0
+            For ii = 0 To NumFrames - 1 'Loop on the number of elements
+                For j = 0 To NumEQComboType 'Loop on the SAP load combinations
+                    For qq = 0 To 2 'Loop on the number of output stations
 
-                    'Retrieve beam forces from Static Force Arrays
-                    PDL = -DEADForces(3 * ii + qq, 0)
-                    PLL = -LIVEForces(3 * ii + qq, 0)
-                    M2DL = DEADForces(3 * ii + qq, 1)
-                    M2LL = LIVEForces(3 * ii + qq, 1)
-                    M3DL = DEADForces(3 * ii + qq, 2)
-                    M3LL = LIVEForces(3 * ii + qq, 2)
+                        'Retrieve beam forces from Static Force Arrays
+                        PDL = -DEADForces(3 * ii + qq, 0)
+                        PLL = -LIVEForces(3 * ii + qq, 0)
+                        M2DL = DEADForces(3 * ii + qq, 1)
+                        M2LL = LIVEForces(3 * ii + qq, 1)
+                        M3DL = DEADForces(3 * ii + qq, 2)
+                        M3LL = LIVEForces(3 * ii + qq, 2)
 
-                    EQIndex = (ii * (NumTS * 3) + r * 3 + qq) 'array index where forces for current frame, TS, and station are located
-                    
-                    If CombineEQList.Exists("SRSS") Then
-                        For jj = 1 To 2
-                            For k = 1 To 2
-                                For kk = 1 To 2
-                                    'Combine static beam forces with permuted seismic beam forces, use ACI349 9.2.1 LC4 only
-                                    P_EQcom = PosNeg(jj) * (P_EQ1(EQIndex) ^ 2 + P_EQ2(EQIndex) ^ 2 + P_EQ3(EQIndex) ^ 2) ^ 0.5 + PDL + PLL
-                                    M2_EQcom = PosNeg(k) * (M2_EQ1(EQIndex) ^ 2 + M2_EQ2(EQIndex) ^ 2 + M2_EQ3(EQIndex) ^ 2) ^ 0.5 + M2DL + M2LL
-                                    M3_EQcom = PosNeg(kk) * (M3_EQ1(EQIndex) ^ 2 + M3_EQ2(EQIndex) ^ 2 + M3_EQ3(EQIndex) ^ 2) ^ 0.5 + M3DL + M3LL
-                                    EQForcesSRSS(SRSScounter, 0) = P_EQcom
-                                    EQForcesSRSS(SRSScounter, 1) = M2_EQcom
-                                    EQForcesSRSS(SRSScounter, 2) = M3_EQcom
-                                    SRSScounter = SRSScounter + 1
-                                Next kk
-                            Next k
-                        Next jj
-                    End If
-                    If CombineEQList.Exists("100-40-40") Then 'see SRP 1.92, 2.1
-                        'Find P_EQ with largest magnitude
-                        TempArray = Array(Abs(P_EQ1(EQIndex)), Abs(P_EQ2(EQIndex)), Abs(P_EQ3(EQIndex)))
-                        P100 = Application.WorksheetFunction.Large(TempArray, 1)
-                        P40_1 = Application.WorksheetFunction.Large(TempArray, 2)
-                        P40_2 = Application.WorksheetFunction.Large(TempArray, 3)
-                                                               
-                        'Find M2_EQ with largest magnitude
-                        TempArray = Array(Abs(M2_EQ1(EQIndex)), Abs(M2_EQ2(EQIndex)), Abs(M2_EQ3(EQIndex)))
-                        M2_100 = Application.WorksheetFunction.Large(TempArray, 1)
-                        M2_40_1 = Application.WorksheetFunction.Large(TempArray, 2)
-                        M2_40_2 = Application.WorksheetFunction.Large(TempArray, 3)
-                        
-                        'Find M3_EQ with largest magnitude
-                        TempArray = Array(Abs(M3_EQ1(EQIndex)), Abs(M3_EQ2(EQIndex)), Abs(M3_EQ3(EQIndex)))
-                        M3_100 = Application.WorksheetFunction.Large(TempArray, 1)
-                        M3_40_1 = Application.WorksheetFunction.Large(TempArray, 2)
-                        M3_40_2 = Application.WorksheetFunction.Large(TempArray, 3)
-                        For jj = 1 To 2
-                            For k = 1 To 2
-                                For kk = 1 To 2
-                                    'Combine static beam forces with seismic beam forces, use ACI349 9.2.1 LC4 only
-                                    P_EQcom = PosNeg(jj) * (P100 + 0.4 * P40_1 + 0.4 * P40_2) + PDL + PLL
-                                    M2_EQcom = PosNeg(k) * (M2_100 + 0.4 * M2_40_1 + 0.4 * M2_40_2) + PDL + PLL
-                                    M3_EQcom = PosNeg(kk) * (M3_100 + 0.4 * M3_40_1 + 0.4 * M3_40_2) + PDL + PLL
-                                    
-                                    EQForcesHund(Hundcounter, 0) = P_EQcom
-                                    EQForcesHund(Hundcounter, 1) = M2_EQcom
-                                    EQForcesHund(Hundcounter, 2) = M3_EQcom
-                                    Hundcounter = Hundcounter + 1
-                                Next kk
-                            Next k
-                        Next jj
-                    End If
-                    If CombineEQList.Exists("ASUM") Then
-                        'Combine static beam forces with permuted seismic beam forces, use ACI349 9.2.1 LC4 only
-                        P_EQcom = (-P_EQ1(EQIndex) + -P_EQ2(EQIndex) + -P_EQ3(EQIndex)) + PDL + PLL
-                        M2_EQcom = (M2_EQ1(EQIndex) + M2_EQ2(EQIndex) + M2_EQ3(EQIndex)) + M2DL + M2LL
-                        M3_EQcom = (M3_EQ1(EQIndex) + M3_EQ2(EQIndex) + M3_EQ3(EQIndex)) + M3DL + M3LL
+                        EQIndex = (ii * (NumEQComboType + 1) * 3 + j * 3 + qq) 'array index where forces for current frame, load combo, and station are located
+                        'Combine static beam forces with ES beam forces, use ACI349 9.2.1 LC4 only
+                        P_EQcom = (-P(EQIndex)) + PDL + PLL
+                        M2_EQcom = (M2(EQIndex)) + M2DL + M2LL
+                        M3_EQcom = (M3(EQIndex)) + M3DL + M3LL
                         TempArray = Array(P_EQcom, M2_EQcom, M3_EQcom)
-                        EQForcesASUM(ASUMcounter, 0) = P_EQcom
-                        EQForcesASUM(ASUMcounter, 1) = M2_EQcom
-                        EQForcesASUM(ASUMcounter, 2) = M3_EQcom
-                        ASUMcounter = ASUMcounter + 1
-                    End If
+                        EQForcesSAPCombo(EScounter, 0) = P_EQcom
+                        EQForcesSAPCombo(EScounter, 1) = M2_EQcom
+                        EQForcesSAPCombo(EScounter, 2) = M3_EQcom
+                        EScounter = EScounter + 1
                     
-                Next qq 'Next output station
-            Next r 'Next time step
-        Next ii 'Next frame
-
+                    Next qq 'Next output station
+                Next j 'Next load combo
+            Next ii 'Next frame
+        Else 'No combos specified in SAP
+        
+            'Store EQ load case names and pull forces from SAP
+            tempEQLC = Worksheets("Input").Cells(1 + i, 10).Value
+            ReDim EQLC(0 To 2)
+            For j = 0 To 2
+                EQLC(j) = Split(tempEQLC, ", ")(j)
+            Next j
+    
+            'Store seismic effect combination methods
+            tempCombos = Worksheets("Input").Cells(1 + i, 11).Value
+            NumEQComboType = UBound(Split(tempCombos))
+            For j = 0 To NumEQComboType
+                CombineEQList.Add Split(tempCombos, ", ")(j), ""
+            Next j
+    
+            'set output time step option (Envelopes, each step, or last step)
+            Ret = SapModel.Results.Setup.SetOptionModalHist(2) '2 is for each step
+                
+            'Set case and combo output selections
+            Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
+            Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(0))
+            Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ1, V2_EQ1, V3_EQ1, T_EQ1, M2_EQ1, M3_EQ1)
+            Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
+            Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(1))
+            Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ2, V2_EQ2, V3_EQ2, T_EQ2, M2_EQ2, M3_EQ2)
+            Ret = SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput
+            Ret = SapModel.Results.Setup.SetCaseSelectedForOutput(EQLC(2))
+            Ret = SapModel.Results.FrameForce(BmGrpNm, 2, NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P_EQ3, V2_EQ3, V3_EQ3, T_EQ3, M2_EQ3, M3_EQ3)
+            
+            If EQAnalysis = "TH" Then
+                NumTS = UBound(Obj) / NumFrames / 3 'Find the number of time steps
+            Else
+                NumTS = 0
+            End If
+            SRSScounter = 0
+            Hundcounter = 0
+            ASUMcounter = 0
+            
+            'Initialize arrays that store combined forces if applicable to current analysis type
+            If CombineEQList.Exists("SRSS") Then
+                ReDim EQForcesSRSS(0 To NumberResults * 8 - 1, 0 To 2)
+            End If
+            If CombineEQList.Exists("100-40-40") Then
+                ReDim EQForcesHund(0 To NumberResults * 8 - 1, 0 To 2)
+            End If
+            If CombineEQList.Exists("ASUM") Then
+                ReDim EQForcesASUM(0 To NumberResults - 1, 0 To 2)
+            End If
+            
+            For ii = 0 To NumFrames - 1 'Loop on the number of elements
+                For r = 0 To NumTS ' Loop on the number of time steps
+                    For qq = 0 To 2 'Loop on the number of output stations
+    
+                        'Retrieve beam forces from Static Force Arrays
+                        PDL = -DEADForces(3 * ii + qq, 0)
+                        PLL = -LIVEForces(3 * ii + qq, 0)
+                        M2DL = DEADForces(3 * ii + qq, 1)
+                        M2LL = LIVEForces(3 * ii + qq, 1)
+                        M3DL = DEADForces(3 * ii + qq, 2)
+                        M3LL = LIVEForces(3 * ii + qq, 2)
+    
+                        EQIndex = (ii * (NumTS * 3) + r * 3 + qq) 'array index where forces for current frame, TS, and station are located
+                        
+                        If CombineEQList.Exists("SRSS") Then
+                            For jj = 1 To 2
+                                For k = 1 To 2
+                                    For kk = 1 To 2
+                                        'Combine static beam forces with permuted seismic beam forces, use ACI349 9.2.1 LC4 only
+                                        P_EQcom = PosNeg(jj) * (P_EQ1(EQIndex) ^ 2 + P_EQ2(EQIndex) ^ 2 + P_EQ3(EQIndex) ^ 2) ^ 0.5 + PDL + PLL
+                                        M2_EQcom = PosNeg(k) * (M2_EQ1(EQIndex) ^ 2 + M2_EQ2(EQIndex) ^ 2 + M2_EQ3(EQIndex) ^ 2) ^ 0.5 + M2DL + M2LL
+                                        M3_EQcom = PosNeg(kk) * (M3_EQ1(EQIndex) ^ 2 + M3_EQ2(EQIndex) ^ 2 + M3_EQ3(EQIndex) ^ 2) ^ 0.5 + M3DL + M3LL
+                                        EQForcesSRSS(SRSScounter, 0) = P_EQcom
+                                        EQForcesSRSS(SRSScounter, 1) = M2_EQcom
+                                        EQForcesSRSS(SRSScounter, 2) = M3_EQcom
+                                        SRSScounter = SRSScounter + 1
+                                    Next kk
+                                Next k
+                            Next jj
+                        End If
+                        If CombineEQList.Exists("100-40-40") Then 'see SRP 1.92, 2.1
+                            'Find P_EQ with largest magnitude
+                            TempArray = Array(Abs(P_EQ1(EQIndex)), Abs(P_EQ2(EQIndex)), Abs(P_EQ3(EQIndex)))
+                            P100 = Application.WorksheetFunction.Large(TempArray, 1)
+                            P40_1 = Application.WorksheetFunction.Large(TempArray, 2)
+                            P40_2 = Application.WorksheetFunction.Large(TempArray, 3)
+                                                                   
+                            'Find M2_EQ with largest magnitude
+                            TempArray = Array(Abs(M2_EQ1(EQIndex)), Abs(M2_EQ2(EQIndex)), Abs(M2_EQ3(EQIndex)))
+                            M2_100 = Application.WorksheetFunction.Large(TempArray, 1)
+                            M2_40_1 = Application.WorksheetFunction.Large(TempArray, 2)
+                            M2_40_2 = Application.WorksheetFunction.Large(TempArray, 3)
+                            
+                            'Find M3_EQ with largest magnitude
+                            TempArray = Array(Abs(M3_EQ1(EQIndex)), Abs(M3_EQ2(EQIndex)), Abs(M3_EQ3(EQIndex)))
+                            M3_100 = Application.WorksheetFunction.Large(TempArray, 1)
+                            M3_40_1 = Application.WorksheetFunction.Large(TempArray, 2)
+                            M3_40_2 = Application.WorksheetFunction.Large(TempArray, 3)
+                            For jj = 1 To 2
+                                For k = 1 To 2
+                                    For kk = 1 To 2
+                                        'Combine static beam forces with seismic beam forces, use ACI349 9.2.1 LC4 only
+                                        P_EQcom = PosNeg(jj) * (P100 + 0.4 * P40_1 + 0.4 * P40_2) + PDL + PLL
+                                        M2_EQcom = PosNeg(k) * (M2_100 + 0.4 * M2_40_1 + 0.4 * M2_40_2) + PDL + PLL
+                                        M3_EQcom = PosNeg(kk) * (M3_100 + 0.4 * M3_40_1 + 0.4 * M3_40_2) + PDL + PLL
+                                        
+                                        EQForcesHund(Hundcounter, 0) = P_EQcom
+                                        EQForcesHund(Hundcounter, 1) = M2_EQcom
+                                        EQForcesHund(Hundcounter, 2) = M3_EQcom
+                                        Hundcounter = Hundcounter + 1
+                                    Next kk
+                                Next k
+                            Next jj
+                        End If
+                        If CombineEQList.Exists("ASUM") Then
+                            'Combine static beam forces with permuted seismic beam forces, use ACI349 9.2.1 LC4 only
+                            P_EQcom = (-P_EQ1(EQIndex) + -P_EQ2(EQIndex) + -P_EQ3(EQIndex)) + PDL + PLL
+                            M2_EQcom = (M2_EQ1(EQIndex) + M2_EQ2(EQIndex) + M2_EQ3(EQIndex)) + M2DL + M2LL
+                            M3_EQcom = (M3_EQ1(EQIndex) + M3_EQ2(EQIndex) + M3_EQ3(EQIndex)) + M3DL + M3LL
+                            TempArray = Array(P_EQcom, M2_EQcom, M3_EQcom)
+                            EQForcesASUM(ASUMcounter, 0) = P_EQcom
+                            EQForcesASUM(ASUMcounter, 1) = M2_EQcom
+                            EQForcesASUM(ASUMcounter, 2) = M3_EQcom
+                            ASUMcounter = ASUMcounter + 1
+                        End If
+                        
+                    Next qq 'Next output station
+                Next r 'Next time step
+            Next ii 'Next frame
+        End If
+        
         Dim NumberofSRSSResults As Double
         Dim NumberofHundResults As Double
         Dim NumberofASUMResults As Double
+        Dim NumberofSAPComboResults As Double
         
         'Write design force triplets, (P, M2, and M3), to PCA Column input file for design of beam section
         NumberofSRSSResults = SRSScounter
         NumberofHundResults = Hundcounter
         NumberofASUMResults = ASUMcounter
+        NumberofSAPComboResults = EScounter
 
         '[Calculate the number of CTI files that will be needed for the given frame element]
+        If EQAnalysis = "SAP_COMBOS" Then
+            If NumberofSAPComboResults Mod 4500 = 0 Then
+                numSAPComboCTIFiles = Int(NumberofSAPComboResults / 4500)
+            Else
+                numSAPComboCTIFiles = Int(NumberofSAPComboResults / 4500) + 1
+            End If
+        Else
+            numSAPComboCTIFiles = 0
+        End If
         If CombineEQList.Exists("SRSS") Then
             If NumberofSRSSResults Mod 4500 = 0 Then
                 numSRSSCTIFiles = Int(NumberofSRSSResults / 4500)
@@ -379,6 +445,57 @@ For BeamGroup_i = 1 To NumBmGroups
             End If
         Else
             numASUMCTIFiles = 0
+        End If
+        
+        'Create SAP Combo CTI files
+        If numSAPComboCTIFiles > 0 Then
+            ReDim SAPCombofilenameCTI(1 To numSAPComboCTIFiles)
+            ReDim numFactLoads(1 To numSAPComboCTIFiles)
+            For j = 1 To numSAPComboCTIFiles
+                SAPCombofilenameCTI(j) = EQAnalysis & BmGrpNm & "-SAPCombos-" & j & "PCAInputFile.cti"
+                
+                '[Add CTI Files to PCA Batch File]
+                Open ActiveWorkbook.Path & "\pcaBatchFile.bat" For Append As #Fnum3
+                    Print #Fnum3, "cd " & ActiveWorkbook.Path
+                    Print #Fnum3, "\\Snlvs5\sys3\Ops$\PCA198410\pcaColumn /i:" & SAPCombofilenameCTI(j)
+                Close #Fnum3
+                
+                If numSAPComboCTIFiles = 1 Then                 '[Only one file]
+                    numFactLoads(j) = NumberofSAPComboResults
+                ElseIf j <> numSAPComboCTIFiles Then            '[It's not the last file
+                    numFactLoads(j) = 4500                  'but more than one exist]
+                ElseIf j = numSAPComboCTIFiles Then             '[It's the last file]
+                    numFactLoads(j) = NumberofSAPComboResults - 4500 * (numSAPComboCTIFiles - 1)
+                End If
+                
+                CTICount = CTICount + 1
+                Worksheets("Main").Cells(1 + j, 4) = SAPCombofilenameCTI(j)
+                
+                '[Strings are populated with data that will be used to create the PCA CTI file]
+                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "SRSS-File" & j & "/" & numSRSSCTIFiles)
+
+                '[The CTI Input file is written below]
+                Fnum2 = FreeFile()
+                Open ActiveWorkbook.Path & "\" & SAPCombofilenameCTI(j) For Output As #Fnum2
+
+                StartIndex = (j - 1) * 4500
+                EndIndex = ((j - 1) * 4500) + numFactLoads(j) - 1
+
+                For q = 1 To 43
+                    Print #Fnum2, strArray(q)
+                Next q
+                'Add loads to CTI input file
+                For q = StartIndex To EndIndex
+                    Print #Fnum2, EQForcesSAPCombo(q, 0) & "," & EQForcesSAPCombo(q, 1) & "," & EQForcesSAPCombo(q, 2)
+                Next q
+
+                For q = 44 To 86
+                    Print #Fnum2, strArray(q)
+                Next q
+                Close #Fnum2
+                
+            Next j
+            
         End If
         'Create SRSS CTI files
         If numSRSSCTIFiles > 0 Then
@@ -526,6 +643,7 @@ For BeamGroup_i = 1 To NumBmGroups
                 Close #Fnum2
             Next j
         End If
+
     Next i ' next seismic analysis
 Next BeamGroup_i
 

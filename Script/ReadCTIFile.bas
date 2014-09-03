@@ -49,7 +49,7 @@ bararea.Add 11, 1.56
 bararea.Add 14, 2.25
 
 
-For j = 1 To 3
+For j = 1 To 4
     '[Find the range of column groups]
     With Worksheets("Main")
         .Cells(1, j).Select
