@@ -241,31 +241,11 @@ For BeamGroup_i = 1 To NumBmGroups
             ReDim EQForcesSAPCombo(0 To NumberResults - 1, 0 To 2)
             
             EScounter = 0
-            For ii = 0 To NumFrames - 1 'Loop on the number of elements
-                For j = 0 To NumEQComboType 'Loop on the SAP load combinations
-                    For qq = 0 To 2 'Loop on the number of output stations
-
-                        'Retrieve beam forces from Static Force Arrays
-                        PDL = -DEADForces(3 * ii + qq, 0)
-                        PLL = -LIVEForces(3 * ii + qq, 0)
-                        M2DL = DEADForces(3 * ii + qq, 1)
-                        M2LL = LIVEForces(3 * ii + qq, 1)
-                        M3DL = DEADForces(3 * ii + qq, 2)
-                        M3LL = LIVEForces(3 * ii + qq, 2)
-
-                        EQIndex = (ii * (NumEQComboType + 1) * 3 + j * 3 + qq) 'array index where forces for current frame, load combo, and station are located
-                        'Combine static beam forces with ES beam forces, use ACI349 9.2.1 LC4 only
-                        P_EQcom = (-P(EQIndex)) + PDL + PLL
-                        M2_EQcom = (M2(EQIndex)) + M2DL + M2LL
-                        M3_EQcom = (M3(EQIndex)) + M3DL + M3LL
-                        TempArray = Array(P_EQcom, M2_EQcom, M3_EQcom)
-                        EQForcesSAPCombo(EScounter, 0) = P_EQcom
-                        EQForcesSAPCombo(EScounter, 1) = M2_EQcom
-                        EQForcesSAPCombo(EScounter, 2) = M3_EQcom
-                        EScounter = EScounter + 1
-                    
-                    Next qq 'Next output station
-                Next j 'Next load combo
+            For ii = 0 To NumberResults - 1 'Loop on the number of results
+                EQForcesSAPCombo(ii, 0) = (-P(ii))
+                EQForcesSAPCombo(ii, 1) = (M2(ii))
+                EQForcesSAPCombo(ii, 2) = (M3(ii))
+                EScounter = EScounter + 1
             Next ii 'Next frame
         Else 'No combos specified in SAP
         
