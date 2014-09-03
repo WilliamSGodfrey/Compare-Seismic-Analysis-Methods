@@ -472,7 +472,7 @@ For BeamGroup_i = 1 To NumBmGroups
                 Worksheets("Main").Cells(1 + j, 4) = SAPCombofilenameCTI(j)
                 
                 '[Strings are populated with data that will be used to create the PCA CTI file]
-                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "SRSS-File" & j & "/" & numSRSSCTIFiles)
+                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "SRSS-File" & j & "/" & numSRSSCTIFiles, i)
 
                 '[The CTI Input file is written below]
                 Fnum2 = FreeFile()
@@ -522,7 +522,7 @@ For BeamGroup_i = 1 To NumBmGroups
                 Worksheets("Main").Cells(1 + j, 1) = SRSSfilenameCTI(j)
 
                 '[Strings are populated with data that will be used to create the PCA CTI file]
-                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "SRSS-File" & j & "/" & numSRSSCTIFiles)
+                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "SRSS-File" & j & "/" & numSRSSCTIFiles, i)
 
                 '[The CTI Input file is written below]
                 Fnum2 = FreeFile()
@@ -570,7 +570,7 @@ For BeamGroup_i = 1 To NumBmGroups
                 Worksheets("Main").Cells(1 + j, 2) = ASUMfilenameCTI(j)
 
                 '[Strings are populated with data that will be used to create the PCA CTI file]
-                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "ASUM-File" & j & "/" & UBound(ASUMfilenameCTI))
+                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "ASUM-File" & j & "/" & UBound(ASUMfilenameCTI), i)
 
                 '[The CTI Input file is written below]
                 Fnum2 = FreeFile()
@@ -618,7 +618,7 @@ For BeamGroup_i = 1 To NumBmGroups
                 Worksheets("Main").Cells(1 + j, 3) = HundfilenameCTI(j)
 
                 '[Strings are populated with data that will be used to create the PCA CTI file]
-                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "Hund-File" & j & "/" & UBound(HundfilenameCTI))
+                Call PCA.Strings(numFactLoads(j), BmWidth, BmHeight, "Hund-File" & j & "/" & UBound(HundfilenameCTI), i)
 
                 '[The CTI Input file is written below]
                 Fnum2 = FreeFile()

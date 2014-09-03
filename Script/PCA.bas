@@ -1,4 +1,6 @@
 Attribute VB_Name = "PCA"
+
+
 Option Explicit
 '----------------------------------------------------------------------------------------------
 'The following code is used to create the CTI input file for PCA Column.
@@ -7,7 +9,7 @@ Option Explicit
 'can be found in the CTIInfoPCAColumnVersion4_1 module.]
 '----------------------------------------------------------------------------------------------
 
-Sub Strings(ByVal numberOfLoads As Long, ByVal columnWidth As Double, ByVal columnDepth As Double, ByVal strGroupName As String)
+Sub Strings(ByVal numberOfLoads As Long, ByVal columnWidth As Double, ByVal columnDepth As Double, ByVal strGroupName As String, ByVal Line As Double)
 
 strArray(1) = "#pcaColumn Text Input (CTI) File:"
 strArray(2) = "[pcaColumn version]"
@@ -112,7 +114,7 @@ strArray(19) = strArray(19) & ",-50.000000,0.000000,0.000000,5.000000,5.000000"
 strArray(20) = "[Ties]"
 '[There are 3 values separated by commas in one line in this section. These values
  'are described below in the order they appear from left to right. (Menu Input |
- 'Reinforcement | Confinement…)]
+ 'Reinforcement | Confinement?)]
 '[1. Index (0 based) of tie bars for longitudinal bars smaller that the one
  'specified in the 3rd item in this section in the drop-down list]
 '[2. Index (0 based) of tie bars for longitudinal bars bigger that the one specified
@@ -133,21 +135,39 @@ strArray(24) = "[Design Reinforcement]"
 '-----------------------------------------------------------------------------------------------
 Dim drArray(1 To 12) As String
 
-drArray(1) = "4"           '[Minimum number of top and bottom bars]
-drArray(2) = "12"          '[Maximum number of top and bottom bars]
-drArray(3) = "4"           '[Minimum number of left and right bars]
-drArray(4) = "12"          '[Maximum number of left and right bars]
+If Worksheets("Input").Cells(1 + Line, 12) = "NO" Then
 
-'[0=#3bar,1=#4bar,2=#5bar,3=#6bar, ... ,7=#10bar,8=#11bar]
+    drArray(1) = 2 * Worksheets("Input").Cells(1 + Line, 13)        '[Minimum number of top and bottom bars]
+    drArray(2) = 2 * Worksheets("Input").Cells(1 + Line, 13)        '[Maximum number of top and bottom bars]
+    drArray(3) = 2 * Worksheets("Input").Cells(1 + Line, 14)        '[Minimum number of left and right bars]
+    drArray(4) = 2 * Worksheets("Input").Cells(1 + Line, 14)        '[Maximum number of left and right bars]
+    
+    '[0=#3bar,1=#4bar,2=#5bar,3=#6bar, ... ,7=#10bar,8=#11bar]
+    
+    drArray(5) = Worksheets("Input").Cells(1 + Line, 15) - 3         '[Index (0 based) of minimum size for top and bottom bars]
+    drArray(6) = Worksheets("Input").Cells(1 + Line, 15) - 3         '[Index (0 based) of maximum size for top and bottom bars]
+    drArray(7) = Worksheets("Input").Cells(1 + Line, 16) - 3         '[Index (0 based) of minimum size for left and right bars]
+    drArray(8) = Worksheets("Input").Cells(1 + Line, 16) - 3         '[Index (0 based) of maximum size for left and right bars
+Else
 
-drArray(5) = "3"           '[Index (0 based) of minimum size for top and bottom bars]
-drArray(6) = "8"           '[Index (0 based) of maximum size for top and bottom bars]
-drArray(7) = "3"           '[Index (0 based) of minimum size for left and right bars]
-drArray(8) = "8"           '[Index (0 based) of maximum size for left and right bars]
-drArray(9) = "2.000000"    '[Clear cover to top and bottom bars]
-drArray(10) = "2.000000"   '[Reserved. Do not edit.]
-drArray(11) = "2.000000"   '[Clear cover to left and right bars]
-drArray(12) = "2.000000"   '[Reserved. Do not edit.]
+    drArray(1) = "4"           '[Minimum number of top and bottom bars]
+    drArray(2) = "12"          '[Maximum number of top and bottom bars]
+    drArray(3) = "4"           '[Minimum number of left and right bars]
+    drArray(4) = "12"          '[Maximum number of left and right bars]
+    
+    '[0=#3bar,1=#4bar,2=#5bar,3=#6bar, ... ,7=#10bar,8=#11bar]
+    
+    drArray(5) = "3"           '[Index (0 based) of minimum size for top and bottom bars]
+    drArray(6) = "8"           '[Index (0 based) of maximum size for top and bottom bars]
+    drArray(7) = "3"           '[Index (0 based) of minimum size for left and right bars]
+    drArray(8) = "8"           '[Index (0 based) of maximum size for left and right bars]
+End If
+
+    drArray(9) = "2.000000"    '[Clear cover to top and bottom bars]
+    drArray(10) = "2.000000"   '[Reserved. Do not edit.]
+    drArray(11) = "2.000000"   '[Clear cover to left and right bars]
+    drArray(12) = "2.000000"   '[Reserved. Do not edit.]
+
 '-----------------------------------------------------------------------------------------------
 strArray(25) = ""
 For i = 1 To 11
@@ -181,6 +201,7 @@ yColEndDim = CStr(Format(columnDepth * 12, "0.000000"))
 xIncr = CStr(Format(CDbl(xColEndDim) - CDbl(xColStartDim), "0.000000"))
 '[6. Section depth (along Y) Increment]
 yIncr = CStr(Format(CDbl(yColEndDim) - CDbl(yColStartDim), "0.000000"))
+
 '-----------------------------------------------------------------------------------------------
 strArray(29) = xColStartDim & comma & yColStartDim & comma & xColEndDim & comma & yColEndDim & _
                comma & xIncr & comma & yIncr
@@ -203,7 +224,7 @@ fc = CStr(Format(0.85 * fpc / 1000, "0.000000"))    '[Concrete maximum stress, f
 beta1 = 0.85 - 0.05 * (fpc / 1000 - 4)
 If beta1 > 0.85 Then beta1 = 0.85
 If beta1 < 0.65 Then beta1 = 0.65
-fpc1 = CStr(Format(fpc / 1000, "0.000000"))         '[Concrete strength, f’c (ksi)]
+fpc1 = CStr(Format(fpc / 1000, "0.000000"))         '[Concrete strength, f?c (ksi)]
 b1 = CStr(Format(beta1, "0.000000"))                '[Beta(1) for concrete stress block]
 esu = "0.003000"                                    '[Concrete ultimate strain (in/in)]
 fy1 = CStr(Format(fy / 1000, "0.000000"))           '[Steel yield strength, fy (ksi)]
@@ -245,6 +266,8 @@ strArray(40) = "[Reinforcement Bars]"
 strArray(41) = "0"
 strArray(42) = "[Factored Loads]"
 strArray(43) = CStr(numFactLoads)                '[NOT USED]
+
+
 
 '[VBA Code reads to here, stop, reads in load combination forces, and continues below]
 
@@ -294,3 +317,4 @@ strArray(85) = "1"        '[0-User defined;1-ASTM615;2-CSA G30.18;3-prEN 10080;4
 strArray(86) = "[User Defined Bars]"
 
 End Sub
+
