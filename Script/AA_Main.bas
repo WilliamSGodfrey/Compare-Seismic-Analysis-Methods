@@ -279,8 +279,10 @@ For BeamGroup_i = 1 To NumBmGroups
             
             If EQAnalysis = "TH" Then
                 NumTS = (UBound(Obj) + 1) / NumFrames / 3 'Find the number of time steps
+                TSLoop = NumTS - 1
             Else
                 NumTS = 0
+                TSLoop = 0
             End If
             SRSScounter = 0
             Hundcounter = 0
@@ -298,7 +300,7 @@ For BeamGroup_i = 1 To NumBmGroups
             End If
             
             For ii = 0 To NumFrames - 1 'Loop on the number of elements
-                For r = 0 To NumTS - 1 ' Loop on the number of time steps
+                For r = 0 To TSLoop ' Loop on the number of time steps
                     For qq = 0 To 2 'Loop on the number of output stations
     
                         'Retrieve beam forces from Static Force Arrays
