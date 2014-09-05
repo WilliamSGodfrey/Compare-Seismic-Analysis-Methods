@@ -206,7 +206,7 @@ For j = 1 To 4
                     ICfile = ctiPath
                 End If
                 'Check if max P, min P, max M2x, or Max My
-                If Pu >= MaxP And IC < MaxPIC Then
+                If Pu > MaxP Or (Pu = MaxP And IC < MaxPIC) Then
                     MaxP = Pu
                     MaxPMx = Mux
                     MaxPMy = Muy
@@ -214,7 +214,7 @@ For j = 1 To 4
                     MaxPfile = ctiPath
                     MaxPIC = IC
                 End If
-                If Pu <= MinP And IC < MinPIC Then
+                If Pu < MinP Or (Pu = MinP And IC < MinPIC) Then
                     MinP = Pu
                     MinPMx = Mux
                     MinPMy = Muy
@@ -222,7 +222,7 @@ For j = 1 To 4
                     MinPfile = ctiPath
                     MinPIC = IC
                 End If
-                If Abs(Mux) >= MaxMux And IC < MaxMuxIC Then
+                If Abs(Mux) > MaxMux Or (Abs(Mux) = MaxMux And IC < MaxMuxIC) Then
                     MaxMux = Abs(Mux)
                     MaxMuxP = Pu
                     MaxMuxMy = Abs(Muy)
@@ -230,7 +230,7 @@ For j = 1 To 4
                     MaxMuxfile = ctiPath
                     MaxMuxIC = IC
                 End If
-                If Abs(Muy) >= MaxMuy And IC < MaxMuyIC Then
+                If Abs(Muy) > MaxMuy Or (Abs(Muy) = MaxMuy And IC < MaxMuyIC) Then
                     MaxMuy = Abs(Muy)
                     MaxMuyP = Pu
                     MaxMuyMx = Abs(Mux)
