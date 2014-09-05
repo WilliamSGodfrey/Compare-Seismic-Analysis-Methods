@@ -133,6 +133,7 @@ Dim SRSScounter As Double                   'Counter
 Dim Hundcounter As Double                   'Counter
 Dim ASUMcounter As Double                   'Counter
 Dim EScounter As Double                     'Counter
+Dim TSLoop As Double                        'Counter
 
 Dim BmWidth As Long
 Dim BmHeight As Long
@@ -357,8 +358,8 @@ For BeamGroup_i = 1 To NumBmGroups
                                     For kk = 1 To 2
                                         'Combine static beam forces with seismic beam forces, use ACI349 9.2.1 LC4 only
                                         P_EQcom = PosNeg(jj) * (P100 + 0.4 * P40_1 + 0.4 * P40_2) + PDL + PLL
-                                        M2_EQcom = PosNeg(k) * (M2_100 + 0.4 * M2_40_1 + 0.4 * M2_40_2) + PDL + PLL
-                                        M3_EQcom = PosNeg(kk) * (M3_100 + 0.4 * M3_40_1 + 0.4 * M3_40_2) + PDL + PLL
+                                        M2_EQcom = PosNeg(k) * (M2_100 + 0.4 * M2_40_1 + 0.4 * M2_40_2) + M2DL + M2LL
+                                        M3_EQcom = PosNeg(kk) * (M3_100 + 0.4 * M3_40_1 + 0.4 * M3_40_2) + M3DL + M3LL
                                         
                                         EQForcesHund(Hundcounter, 0) = P_EQcom
                                         EQForcesHund(Hundcounter, 1) = M2_EQcom
